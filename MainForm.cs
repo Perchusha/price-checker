@@ -403,8 +403,6 @@ namespace PriceChecker
                     if (priceNode != null)
                     {
                         string priceText = priceNode.InnerText.Trim();
-                        MessageBox.Show(priceText);
-
                         string numericPart = new string(priceText.Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray());
                         if (decimal.TryParse(numericPart, NumberStyles.Any, new CultureInfo("pl-PL"), out decimal price))
                         {
