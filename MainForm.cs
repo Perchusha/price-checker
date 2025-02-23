@@ -92,7 +92,8 @@ namespace PriceChecker
                        "• Morele\n" +
                        "• X-kom\n",
                 Location = new Point(10, 10),
-                AutoSize = true
+                AutoSize = true,
+                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
             };
             this.Controls.Add(lblSupportedSites);
 
@@ -100,44 +101,64 @@ namespace PriceChecker
             {
                 Text = "Новый товар",
                 Location = new Point(10, lblSupportedSites.Bottom + 10),
-                Size = new Size(780, 60)
+                Size = new Size(this.ClientSize.Width - 20, 50),
+                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right,
             };
+            this.Controls.Add(groupInput);
+
+            Label lblName = new Label
+            {
+                Text = "Имя:",
+                Location = new Point(10, 25),
+                AutoSize = true,
+            };
+            groupInput.Controls.Add(lblName);
 
             txtName = new TextBox
             {
-                Location = new Point(10, 25),
-                Size = new Size(150, 25),
-                Anchor = AnchorStyles.Top | AnchorStyles.Left
+                Location = new Point(lblName.Right + 5, 20),
+                Size = new Size(140, 25),
             };
+            groupInput.Controls.Add(txtName);
+
+            Label lblUrl = new Label
+            {
+                Text = "Ссылка:",
+                Location = new Point(txtName.Right + 10, 25),
+                AutoSize = true,
+            };
+            groupInput.Controls.Add(lblUrl);
 
             txtUrl = new TextBox
             {
-                Location = new Point(txtName.Right + 10, 25),
-                Size = new Size(350, 25),
-                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
+                Location = new Point(lblUrl.Right + 5, 20),
+                Size = new Size(220, 25),
             };
+            groupInput.Controls.Add(txtUrl);
+
+            Label lblPrice = new Label
+            {
+                Text = "Целевая цена:",
+                Location = new Point(txtUrl.Right + 10, 25),
+                AutoSize = true,
+            };
+            groupInput.Controls.Add(lblPrice);
 
             txtTargetPrice = new TextBox
             {
-                Location = new Point(txtUrl.Right + 10, 25),
-                Size = new Size(100, 25),
-                Anchor = AnchorStyles.Top | AnchorStyles.Right
+                Location = new Point(lblPrice.Right + 5, 20),
+                Size = new Size(80, 25),
             };
+            groupInput.Controls.Add(txtTargetPrice);
 
             btnAdd = new Button
             {
                 Text = "Добавить",
-                Location = new Point(txtTargetPrice.Right + 10, 25),
-                Size = new Size(140, 25),
-                Anchor = AnchorStyles.Top | AnchorStyles.Right
+                Location = new Point(txtTargetPrice.Right + 5, 20),
+                AutoSize = true,
             };
             btnAdd.Click += BtnAdd_Click;
-
-            groupInput.Controls.Add(txtName);
-            groupInput.Controls.Add(txtUrl);
-            groupInput.Controls.Add(txtTargetPrice);
             groupInput.Controls.Add(btnAdd);
-            this.Controls.Add(groupInput);
 
             dgvEntries = new DataGridView
             {
@@ -149,7 +170,7 @@ namespace PriceChecker
                 SelectionMode = DataGridViewSelectionMode.CellSelect,
                 MultiSelect = false,
                 Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
-                ClipboardCopyMode = DataGridViewClipboardCopyMode.EnableWithoutHeaderText
+                ClipboardCopyMode = DataGridViewClipboardCopyMode.EnableWithoutHeaderText,
             };
 
             dgvEntries.Columns.Add(new DataGridViewTextBoxColumn
@@ -178,9 +199,9 @@ namespace PriceChecker
                 UseColumnTextForButtonValue = true,
                 FillWeight = 1
             });
-
             dgvEntries.CellContentClick += DgvEntries_CellContentClick;
             dgvEntries.CellEndEdit += DgvEntries_CellEndEdit;
+            this.Controls.Add(dgvEntries);
 
             btnStartChecking = new Button
             {
@@ -190,8 +211,6 @@ namespace PriceChecker
                 Anchor = AnchorStyles.Bottom | AnchorStyles.Left
             };
             btnStartChecking.Click += BtnStartChecking_Click;
-
-            this.Controls.Add(dgvEntries);
             this.Controls.Add(btnStartChecking);
 
             progressBar = new ProgressBar
@@ -207,11 +226,12 @@ namespace PriceChecker
             {
                 AutoSize = true,
                 Text = "Статус: Ожидание\nПоследняя проверка: -",
-                Location = new Point(this.ClientSize.Width - 180, this.ClientSize.Height - 36),
+                Location = new Point(this.ClientSize.Width - 180, dgvEntries.Bottom + 10),
                 Anchor = AnchorStyles.Bottom | AnchorStyles.Right
             };
             this.Controls.Add(lblStatus);
         }
+
 
         private void SetupTrayIcon()
         {
