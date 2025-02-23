@@ -1,16 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Drawing;
-using System.Globalization;
 using System.IO;
-using System.Linq;
-using System.Net.Http;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using HtmlAgilityPack;
-using OpenQA.Selenium;
-using OpenQA.Selenium.Chrome;
-using OpenQA.Selenium.Support.UI;
 
 namespace PriceChecker
 {
@@ -25,9 +19,9 @@ namespace PriceChecker
         private Button btnStartChecking;
         private NotifyIcon trayIcon;
         private ContextMenuStrip trayMenu;
+        private ProgressBar progressBar;
         private System.Timers.Timer priceCheckTimer;
-
-        private static readonly HttpClient httpClient = new HttpClient();
+        private PriceCheckerService priceService = new PriceCheckerService();
 
         private string currentNotificationUrl = "";
         private string dataFilePath;
@@ -50,42 +44,40 @@ namespace PriceChecker
             {
                 Directory.CreateDirectory(folderPath);
             }
-            dataFilePath = Path.Combine(folderPath, "entries.txt");
+            dataFilePath = Path.Combine(folderPath, "entries.json");
         }
 
         private void LoadEntries()
         {
             if (File.Exists(dataFilePath))
             {
-                foreach (var line in File.ReadAllLines(dataFilePath))
+                var entries = Newtonsoft.Json.JsonConvert.DeserializeObject<List<Entry>>(File.ReadAllText(dataFilePath));
+                foreach (var entry in entries)
                 {
-                    var parts = line.Split('|');
-                    if (parts.Length >= 3)
-                    {
-                        dgvEntries.Rows.Add(parts[0], parts[1], parts[2]);
-                    }
+                    dgvEntries.Rows.Add(entry.Name, entry.Url, entry.Price.ToString());
                 }
             }
         }
 
         private void SaveEntries()
         {
-            var lines = new List<string>();
+            var entries = new List<Entry>();
             foreach (DataGridViewRow row in dgvEntries.Rows)
             {
                 if (row.Cells["Name"].Value != null &&
                     row.Cells["Url"].Value != null &&
                     row.Cells["Price"].Value != null)
                 {
-                    string name = row.Cells["Name"].Value.ToString();
-                    string url = row.Cells["Url"].Value.ToString();
-                    string price = row.Cells["Price"].Value.ToString();
-                    lines.Add($"{name}|{url}|{price}");
+                    entries.Add(new Entry
+                    {
+                        Name = row.Cells["Name"].Value.ToString(),
+                        Url = row.Cells["Url"].Value.ToString(),
+                        Price = decimal.Parse(row.Cells["Price"].Value.ToString())
+                    });
                 }
             }
-            File.WriteAllLines(dataFilePath, lines);
+            File.WriteAllText(dataFilePath, Newtonsoft.Json.JsonConvert.SerializeObject(entries, Newtonsoft.Json.Formatting.Indented));
         }
-
 
         private void SetupControls()
         {
@@ -199,9 +191,16 @@ namespace PriceChecker
 
             this.Controls.Add(dgvEntries);
             this.Controls.Add(btnStartChecking);
+
+            progressBar = new ProgressBar
+            {
+                Location = new Point(220, dgvEntries.Bottom + 10),
+                Size = new Size(300, 30),
+                Visible = false,
+                Anchor = AnchorStyles.Bottom | AnchorStyles.Left
+            };
+            this.Controls.Add(progressBar);
         }
-
-
 
         private void SetupTrayIcon()
         {
@@ -234,7 +233,8 @@ namespace PriceChecker
 
         private void SetupTimer()
         {
-            priceCheckTimer = new System.Timers.Timer(3600 * 1000);
+            int interval = int.Parse(ConfigurationManager.AppSettings["PriceCheckInterval"]);
+            priceCheckTimer = new System.Timers.Timer(interval);
             priceCheckTimer.Elapsed += async (s, e) =>
             {
                 try
@@ -309,63 +309,14 @@ namespace PriceChecker
             this.Hide();
         }
 
-        private async Task<string> GetHtmlUsingSeleniumAsync(string url)
-        {
-            return await Task.Run(() =>
-            {
-                var service = ChromeDriverService.CreateDefaultService();
-                service.HideCommandPromptWindow = true;
-
-                var options = new ChromeOptions();
-                options.AddArgument("--headless");
-                options.AddArgument("--disable-gpu");
-                options.AddArgument("--window-size=1920,1080");
-                options.AddExcludedArgument("enable-automation");
-                options.AddAdditionalOption("useAutomationExtension", false);
-                options.AddArgument("--disable-blink-features=AutomationControlled");
-                options.AddArgument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
-                    "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36");
-
-                using (var driver = new ChromeDriver(service, options))
-                {
-                    driver.ExecuteScript("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})");
-                    driver.Navigate().GoToUrl(url);
-                    WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(30));
-                    wait.Until(d => !d.Title.Contains("Just a moment") && !d.PageSource.Contains("Cloudflare"));
-                    return driver.PageSource;
-                }
-            });
-        }
-
-        private async Task<string> GetHtmlWithoutSeleniumAsync(string url)
-        {
-            try
-            {
-                using (var client = new HttpClient())
-                {
-                    client.DefaultRequestHeaders.Add("User-Agent",
-                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
-                        "AppleWebKit/537.36 (KHTML, like Gecko) " +
-                        "Chrome/90.0.4430.93 Safari/537.36");
-
-                    var response = await client.GetAsync(url);
-                    response.EnsureSuccessStatusCode();
-
-                    string html = await response.Content.ReadAsStringAsync();
-                    return html;
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Ошибка при получении HTML: " + ex.Message);
-                return string.Empty;
-            }
-        }
-
         private async Task StartPriceChecking()
         {
-            List<Task> tasks = new List<Task>();
+            progressBar.Visible = true;
+            progressBar.Minimum = 0;
+            progressBar.Maximum = dgvEntries.Rows.Count;
+            progressBar.Value = 0;
 
+            List<Task> tasks = new List<Task>();
             var rows = new List<DataGridViewRow>();
             foreach (DataGridViewRow row in dgvEntries.Rows)
                 rows.Add(row);
@@ -383,7 +334,7 @@ namespace PriceChecker
                     if (!decimal.TryParse(targetPriceStr, out decimal targetPrice))
                         return;
 
-                    decimal actualPrice = await GetPriceFromUrl(url);
+                    decimal actualPrice = await priceService.GetPriceFromUrl(url);
 
                     if (actualPrice < targetPrice)
                     {
@@ -393,6 +344,10 @@ namespace PriceChecker
                                 $"Цена по URL:\n{url}\nопустилась ниже {targetPrice}.\nТекущая цена: {actualPrice}", url);
                         }));
                     }
+                })
+                .ContinueWith(t =>
+                {
+                    this.Invoke(new Action(() => progressBar.Value++));
                 }));
             }
 
@@ -404,117 +359,7 @@ namespace PriceChecker
             {
                 Console.WriteLine("Ошибка при проверке цен: " + ex.Message);
             }
-        }
-
-        private async Task<decimal> GetPriceFromUrl(string url)
-        {
-            try
-            {
-                string html;
-                if (url.ToLower().Contains("ceneo"))
-                {
-                    html = await GetHtmlUsingSeleniumAsync(url);
-                }
-                else
-                {
-                    html = await GetHtmlWithoutSeleniumAsync(url);
-                }
-                var doc = new HtmlAgilityPack.HtmlDocument();
-                doc.LoadHtml(html);
-
-                if (url.ToLower().Contains("amazon"))
-                {
-                    var priceNode = doc.DocumentNode.SelectSingleNode("//*[contains(@class, 'a-price-whole')]");
-                    if (priceNode != null)
-                    {
-                        string priceText = priceNode.InnerText.Trim();
-                        string cleaned = new string(priceText.Where(ch => char.IsDigit(ch) || ch == '.' || ch == ',').ToArray());
-                        cleaned = cleaned.Replace(',', '.');
-                        if (decimal.TryParse(cleaned, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal price))
-                        {
-                            return price;
-                        }
-                    }
-                }
-                else if (url.ToLower().Contains("nbsklep"))
-                {
-                    var priceNode = doc.DocumentNode.SelectSingleNode("//*[@data-qa-product_price]");
-                    if (priceNode != null)
-                    {
-                        string priceAttr = priceNode.GetAttributeValue("data-qa-product_price", "");
-                        if (!string.IsNullOrEmpty(priceAttr))
-                        {
-                            if (decimal.TryParse(priceAttr, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal price))
-                            {
-                                return price;
-                            }
-                        }
-                    }
-                }
-                else if (url.ToLower().Contains("ceneo"))
-                {
-                    var valueNode = doc.DocumentNode.SelectSingleNode("//div[contains(@class, 'product-top__price')]//span[@class='value']");
-                    var pennyNode = doc.DocumentNode.SelectSingleNode("//div[contains(@class, 'product-top__price')]//span[@class='penny']");
-
-                    if (valueNode != null && pennyNode != null)
-                    {
-                        string priceText = valueNode.InnerText.Trim() + pennyNode.InnerText.Trim();
-                        string numericPart = new string(priceText.Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray());
-                        if (decimal.TryParse(numericPart, NumberStyles.Any, new CultureInfo("pl-PL"), out decimal price))
-                        {
-                            return price;
-                        }
-                    }
-                }
-                else if (url.ToLower().Contains("x-kom"))
-                {
-                    var priceNode = doc.DocumentNode.SelectSingleNode("//span[contains(@class, 'parts__Price-sc-53da58c9-2')]");
-                    if (priceNode != null)
-                    {
-                        string priceText = priceNode.InnerText.Trim();
-                        string numericPart = new string(priceText.Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray());
-                        if (decimal.TryParse(numericPart, NumberStyles.Any, new CultureInfo("pl-PL"), out decimal price))
-                        {
-                            return price;
-                        }
-                    }
-                }
-                else if (url.ToLower().Contains("morele.net"))
-                {
-                    var priceNode = doc.DocumentNode.SelectSingleNode("//div[@id='product_price']");
-                    if (priceNode != null)
-                    {
-                        string dataPrice = priceNode.GetAttributeValue("data-price", "");
-                        if (!string.IsNullOrEmpty(dataPrice))
-                        {
-                            if (decimal.TryParse(dataPrice, System.Globalization.NumberStyles.Any,
-                                                 System.Globalization.CultureInfo.InvariantCulture, out decimal price))
-                            {
-                                return price;
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    var priceNode = doc.DocumentNode.SelectSingleNode("//span[@id='price']");
-                    if (priceNode != null)
-                    {
-                        string priceText = priceNode.InnerText.Trim();
-                        string cleaned = new string(priceText.Where(ch => char.IsDigit(ch) || ch == '.' || ch == ',').ToArray());
-                        cleaned = cleaned.Replace(',', '.');
-                        if (decimal.TryParse(cleaned, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal price))
-                        {
-                            return price;
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Ошибка при получении цены: " + ex.Message);
-            }
-            return decimal.MaxValue;
+            progressBar.Visible = false;
         }
 
         private void ShowNotification(string title, string message, string url)
