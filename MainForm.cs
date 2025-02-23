@@ -380,19 +380,16 @@ namespace PriceChecker
                 }
                 else if (url.ToLower().Contains("ceneo"))
                 {
-                    var valueNode = doc.DocumentNode.SelectSingleNode("//span[@class='price']/span[@class='value']");
-                    var pennyNode = doc.DocumentNode.SelectSingleNode("//span[@class='price']/span[@class='penny']");
+                    var valueNode = doc.DocumentNode.SelectSingleNode("//div[contains(@class, 'product-top__price')]//span[@class='value']");
+                    var pennyNode = doc.DocumentNode.SelectSingleNode("//div[contains(@class, 'product-top__price')]//span[@class='penny']");
 
                     if (valueNode != null && pennyNode != null)
                     {
-                        string valueText = valueNode.InnerText.Trim();
-                        string pennyText = pennyNode.InnerText.Trim();
-
-                        string priceText = valueText + pennyText;
-                        priceText = priceText.Replace(',', '.');
-
-                        if (decimal.TryParse(priceText, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal price))
+                        string priceText = valueNode.InnerText.Trim() + pennyNode.InnerText.Trim();
+                        string numericPart = new string(priceText.Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray());
+                        if (decimal.TryParse(numericPart, NumberStyles.Any, new CultureInfo("pl-PL"), out decimal price))
                         {
+                            MessageBox.Show($"price: {price}");
                             return price;
                         }
                     }
