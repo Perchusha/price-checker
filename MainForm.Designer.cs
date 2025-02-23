@@ -25,7 +25,7 @@
             this.MinimumSize = new System.Drawing.Size(420, 340);
 
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            
+
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "MainForm";
             this.Text = "Price Checker";

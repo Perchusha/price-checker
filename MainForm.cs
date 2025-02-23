@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Drawing;
 using System.IO;
+using System.Media;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -66,7 +67,6 @@ namespace PriceChecker
             };
 
             mainMenu.Items.Add(settingsMenuItem);
-
             this.MainMenuStrip = mainMenu;
             this.Controls.Add(mainMenu);
         }
@@ -288,8 +288,9 @@ namespace PriceChecker
 
         private void SetupTimer()
         {
-            int interval = int.Parse(ConfigurationManager.AppSettings["PriceCheckInterval"]);
-            priceCheckTimer = new System.Timers.Timer(interval);
+            int intervalInHours = Properties.Settings.Default.PriceCheckIntervalHours;
+            int intervalInMilliseconds = intervalInHours * 3600000;
+            priceCheckTimer = new System.Timers.Timer(intervalInMilliseconds);
             priceCheckTimer.Elapsed += Timer_Elapsed;
             priceCheckTimer.AutoReset = true;
         }
@@ -446,6 +447,11 @@ namespace PriceChecker
             trayIcon.BalloonTipTitle = title;
             trayIcon.BalloonTipText = message;
             trayIcon.ShowBalloonTip(3000);
+
+            if (Properties.Settings.Default.EnableSoundNotification)
+            {
+                System.Media.SystemSounds.Exclamation.Play();
+            }
         }
 
         protected override void OnFormClosing(FormClosingEventArgs e)

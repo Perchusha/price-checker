@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,6 +21,12 @@ namespace PriceChecker
                     MessageBox.Show("Приложение уже запущено.");
                     return;
                 }
+
+                string lang = Properties.Settings.Default.Language;
+                CultureInfo culture = (lang == "ru") ? new CultureInfo("ru-RU") : new CultureInfo("en-US");
+
+                Thread.CurrentThread.CurrentCulture = culture;
+                Thread.CurrentThread.CurrentUICulture = culture;
 
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);

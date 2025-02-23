@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Windows.Forms;
-using Microsoft.Win32;
 
 namespace PriceChecker
 {
@@ -9,40 +8,18 @@ namespace PriceChecker
         public SettingsForm()
         {
             InitializeComponent();
-            chkAutoStart.Checked = IsAutoStartEnabled();
+            nudPriceCheckInterval.Value = Properties.Settings.Default.PriceCheckIntervalHours;
+            chkSoundNotification.Checked = Properties.Settings.Default.EnableSoundNotification;
         }
 
-        // Обработчик нажатия на кнопку "Сохранить"
         private void btnSave_Click(object sender, EventArgs e)
         {
-            SetAutoStart(chkAutoStart.Checked);
+            Properties.Settings.Default.PriceCheckIntervalHours = (int)nudPriceCheckInterval.Value;
+            Properties.Settings.Default.EnableSoundNotification = chkSoundNotification.Checked;
+            Properties.Settings.Default.Save();
+
             MessageBox.Show("Настройки сохранены.", "Информация", MessageBoxButtons.OK, MessageBoxIcon.Information);
             this.Close();
-        }
-
-        private bool IsAutoStartEnabled()
-        {
-            string runKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
-            using (RegistryKey key = Registry.CurrentUser.OpenSubKey(runKey, false))
-            {
-                return key.GetValue("PriceChecker") != null;
-            }
-        }
-
-        private void SetAutoStart(bool enable)
-        {
-            string runKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
-            using (RegistryKey key = Registry.CurrentUser.OpenSubKey(runKey, true))
-            {
-                if (enable)
-                {
-                    key.SetValue("PriceChecker", Application.ExecutablePath);
-                }
-                else
-                {
-                    key.DeleteValue("PriceChecker", false);
-                }
-            }
         }
     }
 }
