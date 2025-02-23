@@ -56,7 +56,7 @@ namespace PriceChecker
                 var entries = Newtonsoft.Json.JsonConvert.DeserializeObject<List<Entry>>(File.ReadAllText(dataFilePath));
                 foreach (var entry in entries)
                 {
-                    dgvEntries.Rows.Add(entry.Name, entry.Url, entry.Price.ToString());
+                    dgvEntries.Rows.Add(entry.Name, entry.Url, entry.Price);
                 }
             }
         }
@@ -90,7 +90,8 @@ namespace PriceChecker
                        "• NBsklep\n" +
                        "• Ceneo\n" +
                        "• Morele\n" +
-                       "• X-kom\n",
+                       "• X-kom\n" +
+                       "• YesStyle\n",
                 Location = new Point(10, 10),
                 AutoSize = true,
                 Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
@@ -175,13 +176,13 @@ namespace PriceChecker
 
             dgvEntries.Columns.Add(new DataGridViewTextBoxColumn
             {
-                HeaderText = "Name",
+                HeaderText = "Имя",
                 Name = "Name",
                 FillWeight = 2
             });
             dgvEntries.Columns.Add(new DataGridViewTextBoxColumn
             {
-                HeaderText = "URL",
+                HeaderText = "Ссылка",
                 Name = "Url",
                 FillWeight = 3
             });
@@ -189,7 +190,8 @@ namespace PriceChecker
             {
                 HeaderText = "Цена",
                 Name = "Price",
-                FillWeight = 1
+                FillWeight = 1,
+                ValueType = typeof(decimal)
             });
             dgvEntries.Columns.Add(new DataGridViewButtonColumn
             {
@@ -324,7 +326,7 @@ namespace PriceChecker
                 return;
             }
 
-            dgvEntries.Rows.Add(txtName.Text.Trim(), txtUrl.Text.Trim(), targetPrice.ToString());
+            dgvEntries.Rows.Add(txtName.Text.Trim(), txtUrl.Text.Trim(), targetPrice);
             txtName.Clear();
             txtUrl.Clear();
             txtTargetPrice.Clear();

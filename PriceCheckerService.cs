@@ -2,6 +2,7 @@
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 using HtmlAgilityPack;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
@@ -119,6 +120,21 @@ namespace PriceChecker
                                 return price;
                             }
                         }
+                    }
+                }
+                else if (url.ToLower().Contains("yesstyle.com"))
+                {
+                    var priceNode = doc.DocumentNode.SelectSingleNode("//div[contains(@class, 'productDetailPage_priceContainer__8AIXw') and contains(@class, 'notranslate')]/span[contains(@class, 'productDetailPage_sellingPrice__s6PZu')]");
+                    if (priceNode != null)
+                    {
+                        string priceText = priceNode.InnerText.Trim();
+                        string numericPart = new string(priceText.Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray());
+
+                        if (decimal.TryParse(numericPart, NumberStyles.Any, new CultureInfo("pl-PL"), out decimal price))
+                            {
+                                MessageBox.Show($"YesStyle price: {price}");
+                                return price;
+                            }
                     }
                 }
             }
