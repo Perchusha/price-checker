@@ -97,35 +97,52 @@ namespace PriceChecker
             };
             this.Controls.Add(lblSupportedSites);
 
+            GroupBox groupInput = new GroupBox
+            {
+                Text = "Новый товар",
+                Location = new Point(10, lblSupportedSites.Bottom + 10),
+                Size = new Size(780, 60)
+            };
+
             txtUrl = new TextBox
             {
-                Location = new Point(10, lblSupportedSites.Bottom + 10),
-                Size = new Size(500, 25)
+                Location = new Point(10, 25),
+                Size = new Size(500, 25),
+                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
             };
 
             txtTargetPrice = new TextBox
             {
-                Location = new Point(520, lblSupportedSites.Bottom + 10),
-                Size = new Size(100, 25)
+                Location = new Point(520, 25),
+                Size = new Size(100, 25),
+                Anchor = AnchorStyles.Top | AnchorStyles.Right
             };
 
             btnAdd = new Button
             {
                 Text = "Добавить",
-                Location = new Point(630, lblSupportedSites.Bottom + 10),
-                Size = new Size(160, 25)
+                Location = new Point(630, 25),
+                Size = new Size(140, 25),
+                Anchor = AnchorStyles.Top | AnchorStyles.Right
             };
             btnAdd.Click += BtnAdd_Click;
 
+            groupInput.Controls.Add(txtUrl);
+            groupInput.Controls.Add(txtTargetPrice);
+            groupInput.Controls.Add(btnAdd);
+
+            this.Controls.Add(groupInput);
+
             dgvEntries = new DataGridView
             {
-                Location = new Point(10, txtUrl.Bottom + 20),
-                Size = new Size(780, 400),
+                Location = new Point(10, groupInput.Bottom + 10),
+                Size = new Size(780, 372),
                 AllowUserToAddRows = false,
                 RowHeadersVisible = false,
                 AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
                 SelectionMode = DataGridViewSelectionMode.FullRowSelect,
-                MultiSelect = false
+                MultiSelect = false,
+                Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right
             };
 
             dgvEntries.Columns.Add(new DataGridViewTextBoxColumn
@@ -150,21 +167,22 @@ namespace PriceChecker
             });
             dgvEntries.CellContentClick += DgvEntries_CellContentClick;
             dgvEntries.CellEndEdit += DgvEntries_CellEndEdit;
+            dgvEntries.SelectionMode = DataGridViewSelectionMode.CellSelect;
+            dgvEntries.ClipboardCopyMode = DataGridViewClipboardCopyMode.EnableWithoutHeaderText;
 
             btnStartChecking = new Button
             {
                 Text = "Начать проверку",
                 Location = new Point(10, dgvEntries.Bottom + 10),
-                Size = new Size(200, 30)
+                Size = new Size(200, 30),
+                Anchor = AnchorStyles.Bottom | AnchorStyles.Left
             };
             btnStartChecking.Click += BtnStartChecking_Click;
 
-            this.Controls.Add(txtUrl);
-            this.Controls.Add(txtTargetPrice);
-            this.Controls.Add(btnAdd);
             this.Controls.Add(dgvEntries);
             this.Controls.Add(btnStartChecking);
         }
+
 
         private void SetupTrayIcon()
         {
@@ -264,8 +282,10 @@ namespace PriceChecker
 
         private async void BtnStartChecking_Click(object sender, EventArgs e)
         {
+            this.Cursor = Cursors.WaitCursor;
             await StartPriceChecking();
             priceCheckTimer.Start();
+            this.Cursor = Cursors.Default;
             this.Hide();
         }
 
@@ -295,6 +315,31 @@ namespace PriceChecker
                     return driver.PageSource;
                 }
             });
+        }
+
+        private async Task<string> GetHtmlWithoutSeleniumAsync(string url)
+        {
+            try
+            {
+                using (var client = new HttpClient())
+                {
+                    client.DefaultRequestHeaders.Add("User-Agent",
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
+                        "AppleWebKit/537.36 (KHTML, like Gecko) " +
+                        "Chrome/90.0.4430.93 Safari/537.36");
+
+                    var response = await client.GetAsync(url);
+                    response.EnsureSuccessStatusCode();
+
+                    string html = await response.Content.ReadAsStringAsync();
+                    return html;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Ошибка при получении HTML: " + ex.Message);
+                return string.Empty;
+            }
         }
 
         private async Task StartPriceChecking()
@@ -345,7 +390,15 @@ namespace PriceChecker
         {
             try
             {
-                string html = await GetHtmlUsingSeleniumAsync(url);
+                string html;
+                if (url.ToLower().Contains("ceneo"))
+                {
+                    html = await GetHtmlUsingSeleniumAsync(url);
+                }
+                else
+                {
+                    html = await GetHtmlWithoutSeleniumAsync(url);
+                }
                 var doc = new HtmlAgilityPack.HtmlDocument();
                 doc.LoadHtml(html);
 
@@ -389,7 +442,6 @@ namespace PriceChecker
                         string numericPart = new string(priceText.Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray());
                         if (decimal.TryParse(numericPart, NumberStyles.Any, new CultureInfo("pl-PL"), out decimal price))
                         {
-                            MessageBox.Show($"price: {price}");
                             return price;
                         }
                     }
