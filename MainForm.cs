@@ -14,6 +14,7 @@ namespace PriceChecker
         private TextBox txtName;
         private TextBox txtUrl;
         private TextBox txtTargetPrice;
+        private Label lblStatus;
         private Button btnAdd;
         private DataGridView dgvEntries;
         private Button btnStartChecking;
@@ -26,6 +27,7 @@ namespace PriceChecker
         private string currentNotificationUrl = "";
         private string dataFilePath;
         private bool isExiting = false;
+        private bool isChecking = false;
 
         public MainForm()
         {
@@ -200,6 +202,15 @@ namespace PriceChecker
                 Anchor = AnchorStyles.Bottom | AnchorStyles.Left
             };
             this.Controls.Add(progressBar);
+
+            lblStatus = new Label
+            {
+                AutoSize = true,
+                Text = "Статус: Ожидание\nПоследняя проверка: -",
+                Location = new Point(this.ClientSize.Width - 180, this.ClientSize.Height - 36),
+                Anchor = AnchorStyles.Bottom | AnchorStyles.Right
+            };
+            this.Controls.Add(lblStatus);
         }
 
         private void SetupTrayIcon()
@@ -235,18 +246,28 @@ namespace PriceChecker
         {
             int interval = int.Parse(ConfigurationManager.AppSettings["PriceCheckInterval"]);
             priceCheckTimer = new System.Timers.Timer(interval);
-            priceCheckTimer.Elapsed += async (s, e) =>
-            {
-                try
-                {
-                    await StartPriceChecking();
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine("Ошибка в таймере: " + ex.Message);
-                }
-            };
+            priceCheckTimer.Elapsed += Timer_Elapsed;
             priceCheckTimer.AutoReset = true;
+        }
+
+        private async void Timer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
+        {
+            if (isChecking)
+                return;
+
+            isChecking = true;
+            try
+            {
+                await StartPriceChecking();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Ошибка в таймере: " + ex.Message);
+            }
+            finally
+            {
+                isChecking = false;
+            }
         }
 
         private void ShowApp()
@@ -311,6 +332,12 @@ namespace PriceChecker
 
         private async Task StartPriceChecking()
         {
+            this.Invoke(new Action(() =>
+            {
+                lblStatus.Text = "Статус: Идет проверка...\nПоследняя проверка: " + DateTime.Now.ToString("HH:mm:ss");
+                trayIcon.Text = "Price Checker\nПоследняя проверка: " + DateTime.Now.ToString("HH:mm:ss");
+            }));
+
             progressBar.Visible = true;
             progressBar.Minimum = 0;
             progressBar.Maximum = dgvEntries.Rows.Count;
@@ -359,7 +386,14 @@ namespace PriceChecker
             {
                 Console.WriteLine("Ошибка при проверке цен: " + ex.Message);
             }
+
             progressBar.Visible = false;
+
+            this.Invoke(new Action(() =>
+            {
+                lblStatus.Text = "Статус: Готов\nПоследняя проверка: " + DateTime.Now.ToString("HH:mm:ss");
+                trayIcon.Text = "Price Checker\nПоследняя проверка: " + DateTime.Now.ToString("HH:mm:ss");
+            }));
         }
 
         private void ShowNotification(string title, string message, string url)
