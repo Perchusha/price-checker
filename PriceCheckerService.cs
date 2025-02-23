@@ -31,8 +31,12 @@ namespace PriceChecker
 
                 using (var driver = new ChromeDriver(service, options))
                 {
-                    driver.ExecuteScript("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})");
+                    //driver.ExecuteScript("Object.defineProperty(navigator, 'webdriver', {get: () => undefined});");
+                    //driver.ExecuteScript("Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });");
+                    //driver.ExecuteScript("Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });");
                     driver.Navigate().GoToUrl(url);
+                    //driver.ExecuteScript("window.scrollTo(0, document.body.scrollHeight/2);");
+                    //System.Threading.Thread.Sleep(2000);
                     WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(30));
                     wait.Until(d => !d.Title.Contains("Just a moment") && !d.PageSource.Contains("Cloudflare"));
                     return driver.PageSource;
@@ -40,12 +44,12 @@ namespace PriceChecker
             });
         }
 
-        public async Task<decimal> GetPriceFromUrl(string url)
+
+        public async Task<decimal> GetPriceFromUrl(string url, string name)
         {
             try
             {
                 string html = await GetHtmlUsingSeleniumAsync(url);
-
                 var doc = new HtmlAgilityPack.HtmlDocument();
                 doc.LoadHtml(html);
 
@@ -136,11 +140,26 @@ namespace PriceChecker
                         }
                     }
                 }
+                //else if (url.ToLower().Contains("allegro.pl"))
+                //{
+                //    Console.WriteLine("Allegro is here");
+                //    var priceNode = doc.DocumentNode.SelectSingleNode("//div[contains(@class, 'productDetailPage_priceContainer__8AIXw') and contains(@class, 'notranslate')]/span[contains(@class, 'productDetailPage_sellingPrice__s6PZu')]");
+                //    if (priceNode != null)
+                //    {
+                //        string priceText = priceNode.InnerText.Trim();
+                //        string numericPart = new string(priceText.Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray());
+                //        if (decimal.TryParse(numericPart, NumberStyles.Any, new CultureInfo("pl-PL"), out decimal price))
+                //        {
+                //            return price;
+                //        }
+                //    }
+                //}
             }
             catch (Exception ex)
             {
                 Console.WriteLine("Ошибка при получении цены: " + ex.Message);
             }
+            MessageBox.Show($"Ошибка обработки цены продукта:\n\n{name}");
             return decimal.MaxValue;
         }
     }

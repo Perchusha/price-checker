@@ -397,6 +397,7 @@ namespace PriceChecker
             {
                 tasks.Add(Task.Run(async () =>
                 {
+                    string name = row.Cells["Name"].Value?.ToString();
                     string url = row.Cells["Url"].Value?.ToString();
                     string targetPriceStr = row.Cells["Price"].Value?.ToString();
 
@@ -406,7 +407,7 @@ namespace PriceChecker
                     if (!decimal.TryParse(targetPriceStr, out decimal targetPrice))
                         return;
 
-                    decimal actualPrice = await priceService.GetPriceFromUrl(url);
+                    decimal actualPrice = await priceService.GetPriceFromUrl(url, name);
 
                     if (actualPrice < targetPrice)
                     {
