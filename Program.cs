@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -11,9 +12,19 @@ namespace PriceChecker
         [STAThread]
         static void Main()
         {
-            Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new MainForm());
+            bool isNewInstance;
+            using (Mutex mutex = new Mutex(true, "PriceCheckerAppMutex", out isNewInstance))
+            {
+                if (!isNewInstance)
+                {
+                    MessageBox.Show("Приложение уже запущено.");
+                    return;
+                }
+
+                Application.EnableVisualStyles();
+                Application.SetCompatibleTextRenderingDefault(false);
+                Application.Run(new MainForm());
+            }
         }
     }
 }

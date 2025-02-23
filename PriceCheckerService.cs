@@ -131,9 +131,9 @@ namespace PriceChecker
                         string numericPart = new string(priceText.Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray());
 
                         if (decimal.TryParse(numericPart, NumberStyles.Any, new CultureInfo("pl-PL"), out decimal price))
-                            {
-                                return price;
-                            }
+                        {
+                            return price;
+                        }
                     }
                 }
             }

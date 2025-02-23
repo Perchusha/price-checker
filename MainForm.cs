@@ -23,6 +23,8 @@ namespace PriceChecker
         private ProgressBar progressBar;
         private System.Timers.Timer priceCheckTimer;
         private PriceCheckerService priceService = new PriceCheckerService();
+        private MenuStrip mainMenu;
+        private ToolStripMenuItem settingsMenuItem;
 
         private string currentNotificationUrl = "";
         private string dataFilePath;
@@ -32,6 +34,7 @@ namespace PriceChecker
         public MainForm()
         {
             InitializeComponent();
+            SetupMenu();
             SetupControls();
             SetupTrayIcon();
             SetupTimer();
@@ -47,6 +50,25 @@ namespace PriceChecker
                 Directory.CreateDirectory(folderPath);
             }
             dataFilePath = Path.Combine(folderPath, "entries.json");
+        }
+
+        private void SetupMenu()
+        {
+            mainMenu = new MenuStrip();
+
+            settingsMenuItem = new ToolStripMenuItem("Настройки");
+            settingsMenuItem.Click += (s, e) =>
+            {
+                using (var settingsForm = new SettingsForm())
+                {
+                    settingsForm.ShowDialog(this);
+                }
+            };
+
+            mainMenu.Items.Add(settingsMenuItem);
+
+            this.MainMenuStrip = mainMenu;
+            this.Controls.Add(mainMenu);
         }
 
         private void LoadEntries()
