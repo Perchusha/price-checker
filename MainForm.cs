@@ -17,6 +17,7 @@ namespace PriceChecker
     public partial class MainForm : Form
     {
         private Label lblSupportedSites;
+        private TextBox txtName;
         private TextBox txtUrl;
         private TextBox txtTargetPrice;
         private Button btnAdd;
@@ -58,10 +59,10 @@ namespace PriceChecker
             {
                 foreach (var line in File.ReadAllLines(dataFilePath))
                 {
-                    var parts = line.Split(';');
-                    if (parts.Length >= 2)
+                    var parts = line.Split('|');
+                    if (parts.Length >= 3)
                     {
-                        dgvEntries.Rows.Add(parts[0], parts[1]);
+                        dgvEntries.Rows.Add(parts[0], parts[1], parts[2]);
                     }
                 }
             }
@@ -72,15 +73,19 @@ namespace PriceChecker
             var lines = new List<string>();
             foreach (DataGridViewRow row in dgvEntries.Rows)
             {
-                if (row.Cells["Url"].Value != null && row.Cells["Price"].Value != null)
+                if (row.Cells["Name"].Value != null &&
+                    row.Cells["Url"].Value != null &&
+                    row.Cells["Price"].Value != null)
                 {
+                    string name = row.Cells["Name"].Value.ToString();
                     string url = row.Cells["Url"].Value.ToString();
                     string price = row.Cells["Price"].Value.ToString();
-                    lines.Add($"{url};{price}");
+                    lines.Add($"{name}|{url}|{price}");
                 }
             }
             File.WriteAllLines(dataFilePath, lines);
         }
+
 
         private void SetupControls()
         {
@@ -104,16 +109,23 @@ namespace PriceChecker
                 Size = new Size(780, 60)
             };
 
-            txtUrl = new TextBox
+            txtName = new TextBox
             {
                 Location = new Point(10, 25),
-                Size = new Size(500, 25),
+                Size = new Size(150, 25),
+                Anchor = AnchorStyles.Top | AnchorStyles.Left
+            };
+
+            txtUrl = new TextBox
+            {
+                Location = new Point(txtName.Right + 10, 25),
+                Size = new Size(350, 25),
                 Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
             };
 
             txtTargetPrice = new TextBox
             {
-                Location = new Point(520, 25),
+                Location = new Point(txtUrl.Right + 10, 25),
                 Size = new Size(100, 25),
                 Anchor = AnchorStyles.Top | AnchorStyles.Right
             };
@@ -121,16 +133,16 @@ namespace PriceChecker
             btnAdd = new Button
             {
                 Text = "Добавить",
-                Location = new Point(630, 25),
+                Location = new Point(txtTargetPrice.Right + 10, 25),
                 Size = new Size(140, 25),
                 Anchor = AnchorStyles.Top | AnchorStyles.Right
             };
             btnAdd.Click += BtnAdd_Click;
 
+            groupInput.Controls.Add(txtName);
             groupInput.Controls.Add(txtUrl);
             groupInput.Controls.Add(txtTargetPrice);
             groupInput.Controls.Add(btnAdd);
-
             this.Controls.Add(groupInput);
 
             dgvEntries = new DataGridView
@@ -140,11 +152,18 @@ namespace PriceChecker
                 AllowUserToAddRows = false,
                 RowHeadersVisible = false,
                 AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
-                SelectionMode = DataGridViewSelectionMode.FullRowSelect,
+                SelectionMode = DataGridViewSelectionMode.CellSelect,
                 MultiSelect = false,
-                Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right
+                Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
+                ClipboardCopyMode = DataGridViewClipboardCopyMode.EnableWithoutHeaderText
             };
 
+            dgvEntries.Columns.Add(new DataGridViewTextBoxColumn
+            {
+                HeaderText = "Name",
+                Name = "Name",
+                FillWeight = 2
+            });
             dgvEntries.Columns.Add(new DataGridViewTextBoxColumn
             {
                 HeaderText = "URL",
@@ -165,10 +184,9 @@ namespace PriceChecker
                 UseColumnTextForButtonValue = true,
                 FillWeight = 1
             });
+
             dgvEntries.CellContentClick += DgvEntries_CellContentClick;
             dgvEntries.CellEndEdit += DgvEntries_CellEndEdit;
-            dgvEntries.SelectionMode = DataGridViewSelectionMode.CellSelect;
-            dgvEntries.ClipboardCopyMode = DataGridViewClipboardCopyMode.EnableWithoutHeaderText;
 
             btnStartChecking = new Button
             {
@@ -182,6 +200,7 @@ namespace PriceChecker
             this.Controls.Add(dgvEntries);
             this.Controls.Add(btnStartChecking);
         }
+
 
 
         private void SetupTrayIcon()
@@ -264,7 +283,8 @@ namespace PriceChecker
                 return;
             }
 
-            dgvEntries.Rows.Add(txtUrl.Text.Trim(), targetPrice.ToString());
+            dgvEntries.Rows.Add(txtName.Text.Trim(), txtUrl.Text.Trim(), targetPrice.ToString());
+            txtName.Clear();
             txtUrl.Clear();
             txtTargetPrice.Clear();
 
