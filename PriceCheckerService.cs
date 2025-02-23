@@ -132,7 +132,6 @@ namespace PriceChecker
 
                         if (decimal.TryParse(numericPart, NumberStyles.Any, new CultureInfo("pl-PL"), out decimal price))
                             {
-                                MessageBox.Show($"YesStyle price: {price}");
                                 return price;
                             }
                     }
