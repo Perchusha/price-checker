@@ -4,7 +4,6 @@
     {
         private System.ComponentModel.IContainer components = null;
 
-        private System.Windows.Forms.Label lblSupportedSites;
         private System.Windows.Forms.GroupBox groupInput;
         private System.Windows.Forms.Label lblName;
         private System.Windows.Forms.TextBox txtName;
@@ -45,7 +44,6 @@
             this.DoubleBuffered = true;
 
             this.mainMenu = new System.Windows.Forms.MenuStrip();
-            
             this.settingsMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.settingsMenuItem.Text = "Настройки";
 
@@ -64,6 +62,8 @@
             siteXKom.Text = "X-kom";
             var siteYesStyle = new System.Windows.Forms.ToolStripMenuItem();
             siteYesStyle.Text = "YesStyle";
+            var siteIkea = new System.Windows.Forms.ToolStripMenuItem();
+            siteIkea.Text = "Ikea";
 
             this.supportedSitesMenuItem.DropDownItems.Add(siteAmazon);
             this.supportedSitesMenuItem.DropDownItems.Add(siteNBsklep);
@@ -71,6 +71,7 @@
             this.supportedSitesMenuItem.DropDownItems.Add(siteMorele);
             this.supportedSitesMenuItem.DropDownItems.Add(siteXKom);
             this.supportedSitesMenuItem.DropDownItems.Add(siteYesStyle);
+            this.supportedSitesMenuItem.DropDownItems.Add(siteIkea);
 
             this.mainMenu.Items.Add(this.settingsMenuItem);
             this.mainMenu.Items.Add(this.supportedSitesMenuItem);
@@ -134,6 +135,14 @@
             this.dgvEntries.MultiSelect = false;
             this.dgvEntries.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
             this.dgvEntries.ClipboardCopyMode = System.Windows.Forms.DataGridViewClipboardCopyMode.EnableWithoutHeaderText;
+
+            var colCheck = new System.Windows.Forms.DataGridViewCheckBoxColumn();
+            colCheck.HeaderText = "";
+            colCheck.Name = "Enabled";
+            colCheck.FillWeight = 0.5f;
+            colCheck.TrueValue = true;
+            colCheck.FalseValue = false;
+            this.dgvEntries.Columns.Add(colCheck);
 
             var colName = new System.Windows.Forms.DataGridViewTextBoxColumn();
             colName.HeaderText = "Имя";

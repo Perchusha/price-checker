@@ -173,6 +173,19 @@ namespace PriceChecker
                         }
                     }
                 }
+                else if (url.ToLower().Contains("ikea.com"))
+                {
+                    var priceIntegerNode = doc.DocumentNode.SelectSingleNode("//*[contains(@class, 'pip-price__integer')]");
+                    if (priceIntegerNode != null)
+                    {
+                        string priceText = priceIntegerNode.InnerText.Trim();
+                        priceText = priceText.Replace(" ", "");
+                        if (decimal.TryParse(priceText, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal price))
+                        {
+                            return price;
+                        }
+                    }
+                }
             }
             catch (Exception ex)
             {

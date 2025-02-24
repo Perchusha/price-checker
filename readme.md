@@ -19,6 +19,7 @@ PriceChecker is a Windows Forms application developed in C# that monitors produc
 - Morele
 - X-kom
 - YesStyle
+- Ikea
 
 ## Prerequisites
 

@@ -66,7 +66,7 @@ namespace PriceChecker
                 var entries = Newtonsoft.Json.JsonConvert.DeserializeObject<List<Entry>>(File.ReadAllText(dataFilePath));
                 foreach (var entry in entries)
                 {
-                    dgvEntries.Rows.Add(entry.Name, entry.Url, entry.Price);
+                    dgvEntries.Rows.Add(entry.Enabled, entry.Name, entry.Url, entry.Price);
                 }
             }
         }
@@ -80,8 +80,13 @@ namespace PriceChecker
                     row.Cells["Url"].Value != null &&
                     row.Cells["Price"].Value != null)
                 {
+                    bool enabled = false;
+                    if (row.Cells["Enabled"].Value is bool val)
+                        enabled = val;
+
                     entries.Add(new Entry
                     {
+                        Enabled = enabled,
                         Name = row.Cells["Name"].Value.ToString(),
                         Url = row.Cells["Url"].Value.ToString(),
                         Price = decimal.Parse(row.Cells["Price"].Value.ToString())
@@ -182,7 +187,7 @@ namespace PriceChecker
                 return;
             }
 
-            dgvEntries.Rows.Add(txtName.Text.Trim(), txtUrl.Text.Trim(), targetPrice);
+            dgvEntries.Rows.Add(true, txtName.Text.Trim(), txtUrl.Text.Trim(), targetPrice);
             txtName.Clear();
             txtUrl.Clear();
             txtTargetPrice.Clear();
@@ -228,6 +233,13 @@ namespace PriceChecker
 
             foreach (var row in rows)
             {
+                bool isEnabled = row.Cells["Enabled"].Value as bool? ?? false;
+                if (!isEnabled)
+                {
+                    this.Invoke(new Action(() => progressBar.Value++));
+                    continue;
+                }
+
                 tasks.Add(Task.Run(async () =>
                 {
                     string name = row.Cells["Name"].Value?.ToString();
