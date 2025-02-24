@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Drawing;
 using System.IO;
 using System.Media;
@@ -11,22 +10,10 @@ namespace PriceChecker
 {
     public partial class MainForm : Form
     {
-        private Label lblSupportedSites;
-        private TextBox txtName;
-        private TextBox txtUrl;
-        private TextBox txtTargetPrice;
-        private Label lblStatus;
-        private Button btnAdd;
-        private DataGridView dgvEntries;
-        private Button btnStartChecking;
         private NotifyIcon trayIcon;
         private ContextMenuStrip trayMenu;
-        private ProgressBar progressBar;
         private System.Timers.Timer priceCheckTimer;
         private PriceCheckerService priceService = new PriceCheckerService();
-        private MenuStrip mainMenu;
-        private ToolStripMenuItem settingsMenuItem;
-
         private string currentNotificationUrl = "";
         private string dataFilePath;
         private bool isExiting = false;
@@ -36,7 +23,7 @@ namespace PriceChecker
         {
             InitializeComponent();
             SetupMenu();
-            SetupControls();
+            SetupControlsEvents();
             SetupTrayIcon();
             SetupTimer();
             InitializeDataStorage();
@@ -55,9 +42,6 @@ namespace PriceChecker
 
         private void SetupMenu()
         {
-            mainMenu = new MenuStrip();
-
-            settingsMenuItem = new ToolStripMenuItem("Настройки");
             settingsMenuItem.Click += (s, e) =>
             {
                 using (var settingsForm = new SettingsForm())
@@ -65,10 +49,14 @@ namespace PriceChecker
                     settingsForm.ShowDialog(this);
                 }
             };
+        }
 
-            mainMenu.Items.Add(settingsMenuItem);
-            this.MainMenuStrip = mainMenu;
-            this.Controls.Add(mainMenu);
+        private void SetupControlsEvents()
+        {
+            btnAdd.Click += BtnAdd_Click;
+            btnStartChecking.Click += BtnStartChecking_Click;
+            dgvEntries.CellContentClick += DgvEntries_CellContentClick;
+            dgvEntries.CellEndEdit += DgvEntries_CellEndEdit;
         }
 
         private void LoadEntries()
@@ -103,160 +91,6 @@ namespace PriceChecker
             File.WriteAllText(dataFilePath, Newtonsoft.Json.JsonConvert.SerializeObject(entries, Newtonsoft.Json.Formatting.Indented));
         }
 
-        private void SetupControls()
-        {
-            lblSupportedSites = new Label
-            {
-                Text = "Поддерживаемые сайты:\n" +
-                       "• Amazon\n" +
-                       "• NBsklep\n" +
-                       "• Ceneo\n" +
-                       "• Morele\n" +
-                       "• X-kom\n" +
-                       "• YesStyle\n",
-                Location = new Point(10, 10),
-                AutoSize = true,
-                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
-            };
-            this.Controls.Add(lblSupportedSites);
-
-            GroupBox groupInput = new GroupBox
-            {
-                Text = "Новый товар",
-                Location = new Point(10, lblSupportedSites.Bottom + 10),
-                Size = new Size(this.ClientSize.Width - 20, 50),
-                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right,
-            };
-            this.Controls.Add(groupInput);
-
-            Label lblName = new Label
-            {
-                Text = "Имя:",
-                Location = new Point(10, 25),
-                AutoSize = true,
-            };
-            groupInput.Controls.Add(lblName);
-
-            txtName = new TextBox
-            {
-                Location = new Point(lblName.Right + 5, 20),
-                Size = new Size(140, 25),
-            };
-            groupInput.Controls.Add(txtName);
-
-            Label lblUrl = new Label
-            {
-                Text = "Ссылка:",
-                Location = new Point(txtName.Right + 10, 25),
-                AutoSize = true,
-            };
-            groupInput.Controls.Add(lblUrl);
-
-            txtUrl = new TextBox
-            {
-                Location = new Point(lblUrl.Right + 5, 20),
-                Size = new Size(220, 25),
-            };
-            groupInput.Controls.Add(txtUrl);
-
-            Label lblPrice = new Label
-            {
-                Text = "Целевая цена:",
-                Location = new Point(txtUrl.Right + 10, 25),
-                AutoSize = true,
-            };
-            groupInput.Controls.Add(lblPrice);
-
-            txtTargetPrice = new TextBox
-            {
-                Location = new Point(lblPrice.Right + 5, 20),
-                Size = new Size(80, 25),
-            };
-            groupInput.Controls.Add(txtTargetPrice);
-
-            btnAdd = new Button
-            {
-                Text = "Добавить",
-                Location = new Point(txtTargetPrice.Right + 5, 20),
-                AutoSize = true,
-            };
-            btnAdd.Click += BtnAdd_Click;
-            groupInput.Controls.Add(btnAdd);
-
-            dgvEntries = new DataGridView
-            {
-                Location = new Point(10, groupInput.Bottom + 10),
-                Size = new Size(780, 372),
-                AllowUserToAddRows = false,
-                RowHeadersVisible = false,
-                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
-                SelectionMode = DataGridViewSelectionMode.CellSelect,
-                MultiSelect = false,
-                Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
-                ClipboardCopyMode = DataGridViewClipboardCopyMode.EnableWithoutHeaderText,
-            };
-
-            dgvEntries.Columns.Add(new DataGridViewTextBoxColumn
-            {
-                HeaderText = "Имя",
-                Name = "Name",
-                FillWeight = 2
-            });
-            dgvEntries.Columns.Add(new DataGridViewTextBoxColumn
-            {
-                HeaderText = "Ссылка",
-                Name = "Url",
-                FillWeight = 3
-            });
-            dgvEntries.Columns.Add(new DataGridViewTextBoxColumn
-            {
-                HeaderText = "Цена",
-                Name = "Price",
-                FillWeight = 1,
-                ValueType = typeof(decimal)
-            });
-            dgvEntries.Columns.Add(new DataGridViewButtonColumn
-            {
-                HeaderText = "Действие",
-                Name = "Delete",
-                Text = "Удалить",
-                UseColumnTextForButtonValue = true,
-                FillWeight = 1
-            });
-            dgvEntries.CellContentClick += DgvEntries_CellContentClick;
-            dgvEntries.CellEndEdit += DgvEntries_CellEndEdit;
-            this.Controls.Add(dgvEntries);
-
-            btnStartChecking = new Button
-            {
-                Text = "Начать проверку",
-                Location = new Point(10, dgvEntries.Bottom + 10),
-                Size = new Size(200, 30),
-                Anchor = AnchorStyles.Bottom | AnchorStyles.Left
-            };
-            btnStartChecking.Click += BtnStartChecking_Click;
-            this.Controls.Add(btnStartChecking);
-
-            progressBar = new ProgressBar
-            {
-                Location = new Point(220, dgvEntries.Bottom + 10),
-                Size = new Size(300, 30),
-                Visible = false,
-                Anchor = AnchorStyles.Bottom | AnchorStyles.Left
-            };
-            this.Controls.Add(progressBar);
-
-            lblStatus = new Label
-            {
-                AutoSize = true,
-                Text = "Статус: Ожидание\nПоследняя проверка: -",
-                Location = new Point(this.ClientSize.Width - 180, dgvEntries.Bottom + 10),
-                Anchor = AnchorStyles.Bottom | AnchorStyles.Right
-            };
-            this.Controls.Add(lblStatus);
-        }
-
-
         private void SetupTrayIcon()
         {
             trayMenu = new ContextMenuStrip();
@@ -272,7 +106,6 @@ namespace PriceChecker
             };
 
             trayIcon.DoubleClick += (s, e) => ShowApp();
-
             trayIcon.BalloonTipClicked += (s, e) =>
             {
                 if (!string.IsNullOrEmpty(currentNotificationUrl))

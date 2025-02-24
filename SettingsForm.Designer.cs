@@ -6,6 +6,7 @@
         private System.Windows.Forms.NumericUpDown nudPriceCheckInterval;
         private System.Windows.Forms.Label lblInterval;
         private System.Windows.Forms.CheckBox chkSoundNotification;
+        private System.Windows.Forms.CheckBox chkAutostart;
         private System.Windows.Forms.Button btnSave;
 
         protected override void Dispose(bool disposing)
@@ -22,21 +23,18 @@
             this.nudPriceCheckInterval = new System.Windows.Forms.NumericUpDown();
             this.lblInterval = new System.Windows.Forms.Label();
             this.chkSoundNotification = new System.Windows.Forms.CheckBox();
+            this.chkAutostart = new System.Windows.Forms.CheckBox();
             this.btnSave = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.nudPriceCheckInterval)).BeginInit();
             this.SuspendLayout();
-            // 
-            // lblInterval
-            // 
+
             this.lblInterval.AutoSize = true;
             this.lblInterval.Location = new System.Drawing.Point(12, 15);
             this.lblInterval.Name = "lblInterval";
             this.lblInterval.Size = new System.Drawing.Size(192, 13);
             this.lblInterval.TabIndex = 0;
             this.lblInterval.Text = "Интервал проверки цен (в часах):";
-            // 
-            // nudPriceCheckInterval
-            // 
+
             this.nudPriceCheckInterval.Location = new System.Drawing.Point(210, 13);
             this.nudPriceCheckInterval.Minimum = new decimal(new int[] {
             1,
@@ -51,9 +49,7 @@
             0,
             0,
             0});
-            // 
-            // chkSoundNotification
-            // 
+
             this.chkSoundNotification.AutoSize = true;
             this.chkSoundNotification.Location = new System.Drawing.Point(15, 50);
             this.chkSoundNotification.Name = "chkSoundNotification";
@@ -61,21 +57,26 @@
             this.chkSoundNotification.TabIndex = 2;
             this.chkSoundNotification.Text = "Включить звуковые уведомления";
             this.chkSoundNotification.UseVisualStyleBackColor = true;
-            // 
-            // btnSave
-            // 
+
+            this.chkAutostart.AutoSize = true;
+            this.chkAutostart.Location = new System.Drawing.Point(15, 80);
+            this.chkAutostart.Name = "chkAutostart";
+            this.chkAutostart.Size = new System.Drawing.Size(208, 17);
+            this.chkAutostart.TabIndex = 3;
+            this.chkAutostart.Text = "Добавлять приложение в автозапуск";
+            this.chkAutostart.UseVisualStyleBackColor = true;
+
             this.btnSave.Location = new System.Drawing.Point(15, 120);
             this.btnSave.Name = "btnSave";
             this.btnSave.Size = new System.Drawing.Size(90, 25);
-            this.btnSave.TabIndex = 5;
+            this.btnSave.TabIndex = 4;
             this.btnSave.Text = "Сохранить";
             this.btnSave.UseVisualStyleBackColor = true;
             this.btnSave.Click += new System.EventHandler(this.btnSave_Click);
-            // 
-            // SettingsForm
-            // 
+
             this.ClientSize = new System.Drawing.Size(284, 161);
             this.Controls.Add(this.btnSave);
+            this.Controls.Add(this.chkAutostart);
             this.Controls.Add(this.chkSoundNotification);
             this.Controls.Add(this.nudPriceCheckInterval);
             this.Controls.Add(this.lblInterval);

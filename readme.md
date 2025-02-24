@@ -18,8 +18,7 @@ PriceChecker is a Windows Forms application developed in C# that monitors produc
 - Ceneo
 - Morele
 - X-kom
-
-> **Note:** Some websites (such as Allegro) might not work due to protection mechanisms (403/CAPTCHA).
+- YesStyle
 
 ## Prerequisites
 

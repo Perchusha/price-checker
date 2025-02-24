@@ -49,13 +49,13 @@ namespace PriceChecker.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("ru")]
-        public string Language {
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool AutoStart {
             get {
-                return ((string)(this["Language"]));
+                return ((bool)(this["AutoStart"]));
             }
             set {
-                this["Language"] = value;
+                this["AutoStart"] = value;
             }
         }
     }

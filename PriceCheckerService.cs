@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
@@ -16,34 +17,67 @@ namespace PriceChecker
         {
             return await Task.Run(() =>
             {
-                var service = ChromeDriverService.CreateDefaultService();
-                service.HideCommandPromptWindow = true;
-
-                var options = new ChromeOptions();
-                options.AddArgument("--headless");
-                options.AddArgument("--disable-gpu");
-                options.AddArgument("--window-size=1920,1080");
-                options.AddExcludedArgument("enable-automation");
-                options.AddAdditionalOption("useAutomationExtension", false);
-                options.AddArgument("--disable-blink-features=AutomationControlled");
-                options.AddArgument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
-                    "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36");
-
-                using (var driver = new ChromeDriver(service, options))
+                ChromeDriverService service = null;
+                ChromeDriver driver = null;
+                try
                 {
-                    //driver.ExecuteScript("Object.defineProperty(navigator, 'webdriver', {get: () => undefined});");
-                    //driver.ExecuteScript("Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });");
-                    //driver.ExecuteScript("Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });");
+                    service = ChromeDriverService.CreateDefaultService();
+                    service.HideCommandPromptWindow = true;
+
+                    var options = new ChromeOptions();
+                    options.AddArgument("--headless");
+                    options.AddArgument("--disable-gpu");
+                    options.AddArgument("--window-size=1920,1080");
+                    options.AddExcludedArgument("enable-automation");
+                    options.AddAdditionalOption("useAutomationExtension", false);
+                    options.AddArgument("--disable-blink-features=AutomationControlled");
+                    options.AddArgument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
+                        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36");
+
+                    driver = new ChromeDriver(service, options);
                     driver.Navigate().GoToUrl(url);
-                    //driver.ExecuteScript("window.scrollTo(0, document.body.scrollHeight/2);");
-                    //System.Threading.Thread.Sleep(2000);
                     WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(30));
                     wait.Until(d => !d.Title.Contains("Just a moment") && !d.PageSource.Contains("Cloudflare"));
+
                     return driver.PageSource;
+                }
+                finally
+                {
+                    if (driver != null)
+                    {
+                        try
+                        {
+                            driver.Quit();
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine("Ошибка при закрытии драйвера: " + ex.Message);
+                        }
+                        driver.Dispose();
+                    }
+
+                    if (service != null)
+                    {
+                        service.Dispose();
+                    }
+
+                    if (service?.ProcessId > 0)
+                    {
+                        try
+                        {
+                            var leftover = Process.GetProcessById(service.ProcessId);
+                            if (!leftover.HasExited)
+                            {
+                                leftover.Kill();
+                            }
+                        }
+                        catch
+                        {
+                        }
+                    }
                 }
             });
         }
-
 
         public async Task<decimal> GetPriceFromUrl(string url, string name)
         {
@@ -118,8 +152,7 @@ namespace PriceChecker
                         string dataPrice = priceNode.GetAttributeValue("data-price", "");
                         if (!string.IsNullOrEmpty(dataPrice))
                         {
-                            if (decimal.TryParse(dataPrice, System.Globalization.NumberStyles.Any,
-                                                 System.Globalization.CultureInfo.InvariantCulture, out decimal price))
+                            if (decimal.TryParse(dataPrice, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal price))
                             {
                                 return price;
                             }
@@ -140,20 +173,6 @@ namespace PriceChecker
                         }
                     }
                 }
-                //else if (url.ToLower().Contains("allegro.pl"))
-                //{
-                //    Console.WriteLine("Allegro is here");
-                //    var priceNode = doc.DocumentNode.SelectSingleNode("//div[contains(@class, 'productDetailPage_priceContainer__8AIXw') and contains(@class, 'notranslate')]/span[contains(@class, 'productDetailPage_sellingPrice__s6PZu')]");
-                //    if (priceNode != null)
-                //    {
-                //        string priceText = priceNode.InnerText.Trim();
-                //        string numericPart = new string(priceText.Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray());
-                //        if (decimal.TryParse(numericPart, NumberStyles.Any, new CultureInfo("pl-PL"), out decimal price))
-                //        {
-                //            return price;
-                //        }
-                //    }
-                //}
             }
             catch (Exception ex)
             {

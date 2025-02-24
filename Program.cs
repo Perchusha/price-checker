@@ -22,12 +22,6 @@ namespace PriceChecker
                     return;
                 }
 
-                string lang = Properties.Settings.Default.Language;
-                CultureInfo culture = (lang == "ru") ? new CultureInfo("ru-RU") : new CultureInfo("en-US");
-
-                Thread.CurrentThread.CurrentCulture = culture;
-                Thread.CurrentThread.CurrentUICulture = culture;
-
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
                 Application.Run(new MainForm());
